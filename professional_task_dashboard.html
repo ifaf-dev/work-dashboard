@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>專業工作管理儀表板</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9; /* 更專業的藍灰色背景 */
+        }
+        /* 自訂打勾後的文字樣式 */
+        .task-completed {
+            text-decoration: line-through;
+            color: #94a3b8; /* 淺灰色 */
+        }
+        /* 隱藏預設日期選擇器的邊框以融入設計 */
+        .date-input {
+            appearance: none;
+            -webkit-appearance: none;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen text-slate-800">
+
+    <div class="max-w-[1400px] mx-auto space-y-6">
+        
+        <!-- 頂部 Header：總進度列 -->
+        <header class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-800 mb-4">Workspace Dashboard</h1>
+                </div>
+                <button id="btn-open-trash" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg px-4 py-2 shadow-sm transition-colors flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    檢視垃圾桶
+                </button>
+            </div>
+            
+            <div class="flex justify-between items-end mb-2">
+                <div class="text-slate-600 font-medium">
+                    總進度：<span id="overall-completed" class="text-indigo-600 font-bold text-xl">0</span> / <span id="overall-total">0</span>
+                </div>
+                <div id="overall-percentage" class="text-indigo-600 font-bold text-lg">0%</div>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-3">
+                <div id="overall-progress-bar" class="bg-indigo-500 h-3 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+            </div>
+        </header>
+
+        <!-- 新增任務區塊 (Add Task Form) -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                新增任務
+            </h2>
+            <div class="flex flex-col md:flex-row gap-4">
+                <!-- 任務名稱 -->
+                <input type="text" id="input-task-name" placeholder="輸入任務名稱..." class="flex-[2] border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+                
+                <!-- 選擇分類 -->
+                <select id="input-category" class="flex-1 border border-slate-300 rounded-lg px-4 py-2.5 bg-white focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
+                    <option value="social">📱 Social Media</option>
+                    <option value="contract">📝 Contract</option>
+                    <option value="website">🌐 Website</option>
+                    <option value="event">🎉 Event</option>
+                    <option value="adhoc">⚡ Ad Hoc</option>
+                </select>
+                
+                <!-- 選擇截止日期 -->
+                <input type="date" id="input-deadline" class="flex-1 border border-slate-300 rounded-lg px-4 py-2.5 text-slate-600 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
+                
+                <!-- 急迫標籤 -->
+                <label class="flex items-center gap-2 cursor-pointer bg-red-50 text-red-700 px-4 py-2.5 rounded-lg border border-red-200 hover:bg-red-100 transition-colors">
+                    <input type="checkbox" id="input-urgent" class="w-4 h-4 text-red-600 rounded border-red-300 focus:ring-red-500 accent-red-500">
+                    <span class="font-medium text-sm">Urgent</span>
+                </label>
+
+                <!-- 新增按鈕 -->
+                <button id="btn-add" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg px-6 py-2.5 shadow-sm transition-colors whitespace-nowrap">
+                    加入任務
+                </button>
+            </div>
+        </section>
+
+        <!-- 儀表板主體：5 大區塊 (CSS Grid 排版) -->
+        <!-- 大螢幕分 5 欄，平板 3 欄，手機 1 欄 -->
+        <main class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            
+            <!-- 卡片 1：管理社交媒體 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+                <div class="bg-blue-50 border-b border-blue-100 p-4">
+                    <h3 class="font-bold text-blue-800 flex items-center gap-2">
+                        <span>📱</span> Social Media
+                    </h3>
+                </div>
+                <!-- 任務列表容器 -->
+                <ul id="list-social" class="p-4 space-y-3 flex-1 overflow-y-auto max-h-[400px]"></ul>
+            </div>
+
+            <!-- 卡片 2：合約進度監測 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+                <div class="bg-emerald-50 border-b border-emerald-100 p-4">
+                    <h3 class="font-bold text-emerald-800 flex items-center gap-2">
+                        <span>📝</span> Contract
+                    </h3>
+                </div>
+                <ul id="list-contract" class="p-4 space-y-3 flex-1 overflow-y-auto max-h-[400px]"></ul>
+            </div>
+
+            <!-- 卡片 3：網站管理 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+                <div class="bg-purple-50 border-b border-purple-100 p-4">
+                    <h3 class="font-bold text-purple-800 flex items-center gap-2">
+                        <span>🌐</span> Website
+                    </h3>
+                </div>
+                <ul id="list-website" class="p-4 space-y-3 flex-1 overflow-y-auto max-h-[400px]"></ul>
+            </div>
+
+            <!-- 卡片 4：活動籌備 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+                <div class="bg-orange-50 border-b border-orange-100 p-4">
+                    <h3 class="font-bold text-orange-800 flex items-center gap-2">
+                        <span>🎉</span> Event
+                    </h3>
+                </div>
+                <ul id="list-event" class="p-4 space-y-3 flex-1 overflow-y-auto max-h-[400px]"></ul>
+            </div>
+
+            <!-- 卡片 5：Ad Hoc 事項 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+                <div class="bg-rose-50 border-b border-rose-100 p-4">
+                    <h3 class="font-bold text-rose-800 flex items-center gap-2">
+                        <span>⚡</span> Ad Hoc
+                    </h3>
+                </div>
+                <ul id="list-adhoc" class="p-4 space-y-3 flex-1 overflow-y-auto max-h-[400px]"></ul>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- 垃圾桶 Modal (隱藏) -->
+    <div id="trash-modal" class="fixed inset-0 bg-slate-900/50 hidden z-50 flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl overflow-hidden transform scale-95 transition-transform duration-300 p-6 flex flex-col max-h-[80vh]">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    垃圾桶 (Trash Bin)
+                </h2>
+                <button id="btn-close-trash" class="text-slate-400 hover:text-slate-600 p-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <p class="text-sm text-slate-500 mb-4">完成超過 14 天的任務會自動移至此處。保留 90 天後將自動永久刪除。</p>
+            <div class="flex-1 overflow-y-auto min-h-0 bg-slate-50 border border-slate-200 rounded-xl p-4">
+                <ul id="list-trash" class="space-y-3">
+                    <!-- 垃圾桶清單將由 JS 渲染 -->
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript 邏輯 -->
+    <script>
+        // --- 1. 定義資料結構與 localStorage ---
+        let tasks = [];
+        const STORAGE_KEY = 'workspace_tasks_data';
+
+        const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
+        const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
+
+        // --- 2. 載入資料與生命週期管理 ---
+        function loadAndCleanTasks() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                try {
+                    tasks = JSON.parse(stored);
+                } catch (e) {
+                    tasks = [];
+                }
+            } else {
+                // 預設資料 (首次載入測試用，為了展示功能，我塞了一筆"已過期"的完成任務進來)
+                tasks = [
+                    { id: 1, text: "規劃 11 月社群貼文 Content Calendar", category: "social", deadline: "2023-11-05", isUrgent: true, isCompleted: false, completedAt: null, trashedAt: null, status: 'active' },
+                    { id: 2, text: "審閱 KOL 合作合約草稿", category: "contract", deadline: "2023-10-25", isUrgent: false, isCompleted: false, completedAt: null, trashedAt: null, status: 'active' },
+                    { id: 3, text: "更新官網首頁 Banner 影片", category: "website", deadline: "2023-10-30", isUrgent: false, isCompleted: true, completedAt: Date.now() - 100000, trashedAt: null, status: 'active' },
+                    { id: 4, text: "測試垃圾桶機制 (已完成超過14天)", category: "event", deadline: "2023-09-01", isUrgent: false, isCompleted: true, completedAt: Date.now() - (15 * 24 * 60 * 60 * 1000), trashedAt: null, status: 'active' }
+                ];
+            }
+
+            const now = Date.now();
+            let changed = false;
+
+            // 生命週期檢查：遍歷所有任務，確保不該留下的被清掉
+            tasks = tasks.filter(task => {
+                // 補齊舊資料結構 (如果之前已經用過這個網頁)
+                if (!task.status) task.status = 'active';
+
+                if (task.status === 'active' && task.isCompleted && task.completedAt) {
+                    // 檢查是否超過 14 天
+                    if (now - task.completedAt > FOURTEEN_DAYS_MS) {
+                        task.status = 'trash';
+                        task.trashedAt = now;
+                        changed = true;
+                    }
+                } else if (task.status === 'trash' && task.trashedAt) {
+                    // 檢查是否超過 90 天
+                    if (now - task.trashedAt > NINETY_DAYS_MS) {
+                        changed = true;
+                        return false; // 永久刪除，從陣列中剔除
+                    }
+                }
+                return true; // 條件不過則保留
+            });
+
+            if (changed || !stored) {
+                saveTasks();
+            }
+        }
+
+        function saveTasks() {
+            // 將最新的 tasks 陣列存入瀏覽器
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+        }
+
+        const generateId = () => Date.now() + Math.floor(Math.random() * 1000);
+
+        const categoryLists = {
+            "social": document.getElementById('list-social'),
+            "contract": document.getElementById('list-contract'),
+            "website": document.getElementById('list-website'),
+            "event": document.getElementById('list-event'),
+            "adhoc": document.getElementById('list-adhoc')
+        };
+        const trashList = document.getElementById('list-trash');
+
+        // --- 3. 更新總進度條 ---
+        function updateProgress() {
+            // 只計算還在 Active 狀態的任務
+            const activeTasks = tasks.filter(t => t.status === 'active');
+            const total = activeTasks.length;
+            const completed = activeTasks.filter(t => t.isCompleted).length;
+            const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+            document.getElementById('overall-total').textContent = total;
+            document.getElementById('overall-completed').textContent = completed;
+            document.getElementById('overall-percentage').textContent = percentage + '%';
+            document.getElementById('overall-progress-bar').style.width = percentage + '%';
+        }
+
+        // --- 4. 渲染任務到畫面上 ---
+        function renderTasks() {
+            // 清空所有列表
+            Object.values(categoryLists).forEach(ul => ul.innerHTML = '');
+            trashList.innerHTML = '';
+
+            tasks.forEach(task => {
+                if (task.status === 'trash') {
+                    renderTrashTask(task);
+                    return; // 如果在垃圾桶就跳過普通渲染
+                }
+
+                const li = document.createElement('li');
+                li.className = "flex items-start gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl hover:shadow-md transition-shadow group relative";
+
+                // 標記 Urgent 樣式 (左邊框變紅 + 背景微紅)
+                if (task.isUrgent) {
+                    li.classList.add('border-l-4', 'border-l-red-500', 'bg-red-50/30');
+                }
+
+                // 左側：打勾框
+                const checkboxWrap = document.createElement('div');
+                checkboxWrap.className = "pt-1";
+                const checkbox = document.createElement('input');
+                checkbox.type = "checkbox";
+                checkbox.className = "w-5 h-5 text-indigo-600 rounded border-slate-300 cursor-pointer accent-indigo-500";
+                checkbox.checked = task.isCompleted;
+                checkbox.onchange = () => {
+                    task.isCompleted = checkbox.checked;
+                    // 如果剛打勾，紀錄時間；取消則清空時間
+                    task.completedAt = task.isCompleted ? Date.now() : null;
+                    saveTasks();
+                    renderTasks();
+                    updateProgress();
+                };
+                checkboxWrap.appendChild(checkbox);
+
+                // 中間：文字與日期
+                const contentDiv = document.createElement('div');
+                contentDiv.className = "flex-1 min-w-0";
+                
+                const taskHeader = document.createElement('div');
+                taskHeader.className = "flex items-center gap-2 mb-1 flex-wrap";
+                
+                const taskText = document.createElement('span');
+                taskText.className = `block text-sm font-medium transition-colors ${task.isCompleted ? 'task-completed' : 'text-slate-700'}`;
+                taskText.textContent = task.text;
+
+                taskHeader.appendChild(taskText);
+                
+                // Urgent 標籤 Badge
+                if (task.isUrgent) {
+                    const urgentBadge = document.createElement('span');
+                    urgentBadge.className = "text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider whitespace-nowrap";
+                    urgentBadge.textContent = "Urgent";
+                    taskHeader.appendChild(urgentBadge);
+                }
+
+                // 日期選擇器
+                const dateWrap = document.createElement('div');
+                dateWrap.className = "flex items-center gap-1 text-xs text-slate-500";
+                const dateIcon = document.createElement('span');
+                dateIcon.innerHTML = "📅"; 
+                
+                const dateInput = document.createElement('input');
+                dateInput.type = "date";
+                dateInput.value = task.deadline || "";
+                dateInput.className = "date-input bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:outline-none cursor-pointer p-0 text-xs";
+                dateInput.onchange = (e) => {
+                    task.deadline = e.target.value;
+                    saveTasks();
+                };
+
+                dateWrap.appendChild(dateIcon);
+                dateWrap.appendChild(dateInput);
+                
+                contentDiv.appendChild(taskHeader);
+                contentDiv.appendChild(dateWrap);
+
+                // 右側：手動移至垃圾桶 (Delete 圖示)
+                const deleteBtn = document.createElement('button');
+                deleteBtn.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                `;
+                deleteBtn.title = "移至垃圾桶";
+                deleteBtn.className = "text-slate-300 hover:text-red-500 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 mt-1";
+                deleteBtn.onclick = () => {
+                    task.status = 'trash';
+                    task.trashedAt = Date.now();
+                    saveTasks();
+                    renderTasks();
+                    updateProgress();
+                };
+
+                li.appendChild(checkboxWrap);
+                li.appendChild(contentDiv);
+                li.appendChild(deleteBtn);
+
+                if (categoryLists[task.category]) {
+                    categoryLists[task.category].appendChild(li);
+                }
+            });
+        }
+
+        // --- 5. 垃圾桶渲染邏輯 ---
+        function renderTrashTask(task) {
+            const li = document.createElement('li');
+            li.className = "flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm";
+
+            const textDiv = document.createElement('div');
+            textDiv.className = "text-sm text-slate-500 line-through truncate mr-2";
+            textDiv.textContent = task.text;
+
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = "flex gap-2 flex-shrink-0";
+
+            const restoreBtn = document.createElement('button');
+            restoreBtn.className = "text-xs bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-3 py-1.5 rounded font-medium transition-colors";
+            restoreBtn.textContent = "復原";
+            restoreBtn.onclick = () => {
+                task.status = 'active';
+                task.trashedAt = null;
+                // 若復原，重設 completedAt 避免下一秒又被自動刪除
+                task.completedAt = task.isCompleted ? Date.now() : null; 
+                saveTasks();
+                renderTasks();
+                updateProgress();
+            };
+
+            const permaDeleteBtn = document.createElement('button');
+            permaDeleteBtn.className = "text-xs bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded font-medium transition-colors";
+            permaDeleteBtn.textContent = "永久刪除";
+            permaDeleteBtn.onclick = () => {
+                // 完全從陣列中過濾掉
+                tasks = tasks.filter(t => t.id !== task.id);
+                saveTasks();
+                renderTasks(); 
+            };
+
+            actionsDiv.appendChild(restoreBtn);
+            actionsDiv.appendChild(permaDeleteBtn);
+            
+            li.appendChild(textDiv);
+            li.appendChild(actionsDiv);
+            trashList.appendChild(li);
+        }
+
+        // --- 6. 新增任務 ---
+        function handleAddTask() {
+            const nameInput = document.getElementById('input-task-name');
+            const catInput = document.getElementById('input-category');
+            const dateInput = document.getElementById('input-deadline');
+            const urgentInput = document.getElementById('input-urgent');
+
+            const text = nameInput.value.trim();
+            const category = catInput.value;
+            const deadline = dateInput.value;
+            const isUrgent = urgentInput.checked;
+
+            if (!text) {
+                nameInput.classList.add('border-red-500', 'placeholder-red-400');
+                nameInput.placeholder = "請輸入任務名稱！";
+                setTimeout(() => {
+                    nameInput.classList.remove('border-red-500', 'placeholder-red-400');
+                    nameInput.placeholder = "輸入任務名稱...";
+                }, 2000);
+                return;
+            }
+
+            // 將完整資料推入陣列
+            tasks.push({
+                id: generateId(),
+                text: text,
+                category: category,
+                deadline: deadline,
+                isUrgent: isUrgent,
+                isCompleted: false,
+                completedAt: null,
+                trashedAt: null,
+                status: 'active'
+            });
+
+            saveTasks();
+            
+            // 清空輸入框
+            nameInput.value = '';
+            dateInput.value = '';
+            urgentInput.checked = false;
+
+            renderTasks();
+            updateProgress();
+        }
+
+        // --- 7. Modal (彈出視窗) 控制 ---
+        const trashModal = document.getElementById('trash-modal');
+        const btnOpenTrash = document.getElementById('btn-open-trash');
+        const btnCloseTrash = document.getElementById('btn-close-trash');
+
+        btnOpenTrash.addEventListener('click', () => {
+            trashModal.classList.remove('hidden');
+            setTimeout(() => {
+                trashModal.classList.remove('opacity-0');
+                trashModal.firstElementChild.classList.remove('scale-95');
+            }, 10);
+        });
+
+        function closeTrashModal() {
+            trashModal.classList.add('opacity-0');
+            trashModal.firstElementChild.classList.add('scale-95');
+            setTimeout(() => {
+                trashModal.classList.add('hidden');
+            }, 300);
+        }
+
+        btnCloseTrash.addEventListener('click', closeTrashModal);
+        trashModal.addEventListener('click', (e) => {
+            if (e.target === trashModal) closeTrashModal();
+        });
+
+        // --- 8. 事件綁定與初始化 ---
+        document.getElementById('btn-add').addEventListener('click', handleAddTask);
+        document.getElementById('input-task-name').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') handleAddTask();
+        });
+
+        // 啟動流程：載入儲存資料 -> 自動清理過期 -> 畫畫面
+        loadAndCleanTasks();
+        renderTasks();
+        updateProgress();
+
+    </script>
+</body>
+</html>
